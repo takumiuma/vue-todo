@@ -1,11 +1,7 @@
-<script setup>
-import { VBtn,VTextField,VResponsive,VDataTable,
-        VSelect,VContainer,VRow,VCol,VIcon
-       } from 'vuetify/components'
-import { mdiDelete,mdiCheckBold,mdiPlaylistEdit } from '@mdi/js';
-import SvgIcon from '@jamescoyle/vue-icon';
-</script>
 <script>
+import { mdiDelete,mdiPlaylistEdit } from '@mdi/js';
+import SvgIcon from '@jamescoyle/vue-icon';
+
 export default {
   data() {
     return {
@@ -21,18 +17,15 @@ export default {
         {title:'Command',value:'decide'},
       ],
       icons:{
-        mdiCheckBold,
         mdiDelete,
         mdiPlaylistEdit,
       },
-      name: "my-component",
-      components: {
-        SvgIcon
-      },
     }
   },
+  components: {
+    SvgIcon
+  },
   computed:{
-
   },
   methods:{
     addTodo(){
@@ -108,7 +101,7 @@ export default {
   </v-responsive>
 </template>
 
-<style>
+<style scoped>
   header{
     background-color: rgb(97, 171, 200);
     height: 100px;
