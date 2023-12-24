@@ -19,8 +19,7 @@ export default {
       icons: {
         mdiDelete,
         mdiPlaylistEdit
-      },
-      errorMessage: ''
+      }
     }
   },
   components: {
@@ -28,19 +27,15 @@ export default {
   },
   computed: {},
   methods: {
-    addTodo() {
-      if (this.todo === null || this.todo.length <= 0 || this.todo.length > 200) {
-        this.errorMessage = '1〜200文字以内で入力してください'
-        return
-      }
-      if (!this.pic) {
-        this.errorMessage = '担当者を選んでください'
-        return
-      }
+    required: (value) => !!value || '必ず入力してください',
+    limit_length: (value) => value.length <= 200 || '200文字以内で入力してください',
+    async addTodo() {
+      const { valid } = await this.$refs.form.validate()
+      if (!valid) return
+
       this.todos.push({ id: this.id++, content: this.todo, pic: this.pic })
       this.todo = ''
       this.pic = ''
-      this.errorMessage = ''
     },
     deleteTodo(todo) {
       const index = this.todos.indexOf(todo)
@@ -61,20 +56,27 @@ export default {
 <template>
   <header><v-icon icon="$vuetify"></v-icon>VuetifyでTODOリスト</header>
   <v-container>
-    <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
-    <v-row>
-      <v-col cols="6">
-        <v-text-field v-model="todo" clearable label="TODOを入力"></v-text-field>
-      </v-col>
-      <v-col cols="4">
-        <v-select label="担当者" v-model="pic" :items="pics"></v-select>
-      </v-col>
-      <v-col cols="2">
-        <v-btn height="55" @click="addTodo" color="primary">
-          <svg-icon type="mdi" :path="icons.mdiPlaylistEdit"></svg-icon>追加
-        </v-btn>
-      </v-col>
-    </v-row>
+    <v-form ref="form">
+      <v-row>
+        <v-col cols="6">
+          <v-text-field
+            v-model="todo"
+            :rules="[required, limit_length]"
+            counter="200"
+            clearable
+            label="TODOを入力"
+          ></v-text-field>
+        </v-col>
+        <v-col cols="4">
+          <v-select :rules="[required]" label="担当者" v-model="pic" :items="pics"></v-select>
+        </v-col>
+        <v-col cols="2">
+          <v-btn height="55" color="primary" @click="addTodo">
+            <svg-icon type="mdi" :path="icons.mdiPlaylistEdit"></svg-icon>追加
+          </v-btn>
+        </v-col>
+      </v-row>
+    </v-form>
   </v-container>
   <v-responsive class="mx-auto" max-width="700"
     ><span class="unfinished">In progress</span>
