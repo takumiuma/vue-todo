@@ -34,8 +34,7 @@ export default {
       if (!valid) return
 
       this.todos.push({ id: this.id++, content: this.todo, pic: this.pic })
-      this.todo = ''
-      this.pic = ''
+      this.$refs.form.reset()
     },
     deleteTodo(todo) {
       const index = this.todos.indexOf(todo)
