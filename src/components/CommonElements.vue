@@ -1,20 +1,26 @@
 <template>
-  <v-app-bar color="primary">
-    <template v-slot:prepend>
-      <v-app-bar-nav-icon variant="text" @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
-    </template>
-    <v-app-bar-title><v-icon icon="$vuetify"></v-icon>{{ title }}</v-app-bar-title>
-  </v-app-bar>
-  <v-navigation-drawer permanent v-model="drawer">
-    <v-list>
-      <v-list-item v-for="item in items" :key="item.title" :to="item.link">
-        <v-icon>{{ item.icon }}</v-icon>
-        <v-list-item-title>{{ item.title }}</v-list-item-title>
-      </v-list-item>
-    </v-list>
-  </v-navigation-drawer>
+  <v-app>
+    <v-app-bar color="primary">
+      <template v-slot:prepend>
+        <v-app-bar-nav-icon variant="text" @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
+      </template>
+      <v-app-bar-title><v-icon icon="$vuetify"></v-icon>{{ title }}</v-app-bar-title>
+    </v-app-bar>
+    <v-navigation-drawer permanent v-model="drawer">
+      <v-list>
+        <v-list-item v-for="item in items" :key="item.title" :to="item.link">
+          <v-icon>{{ item.icon }}</v-icon>
+          {{ item.title }}
+        </v-list-item>
+      </v-list>
+    </v-navigation-drawer>
 
-  <v-main></v-main>
+    <v-main>
+      <v-container>
+        <slot />
+      </v-container>
+    </v-main>
+  </v-app>
 </template>
 <script>
 export default {

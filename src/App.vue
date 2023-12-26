@@ -1,10 +1,5 @@
 <template>
-  <v-app>
-    <div id="app">
-      <CommonElements />
-      <router-view />
-    </div>
-  </v-app>
+  <CommonElements><router-view /></CommonElements>
 </template>
 
 <script>
