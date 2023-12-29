@@ -1,6 +1,7 @@
 <script>
 import { mdiDelete, mdiPlaylistEdit } from '@mdi/js'
 import SvgIcon from '@jamescoyle/vue-icon'
+import CommonProps from '../components/CommonProps.vue'
 
 export default {
   data() {
@@ -23,7 +24,8 @@ export default {
     }
   },
   components: {
-    SvgIcon
+    SvgIcon,
+    CommonProps
   },
   computed: {},
   methods: {
@@ -77,8 +79,8 @@ export default {
         </v-row>
       </v-form>
     </v-container>
-    <v-responsive class="mx-auto" max-width="700"
-      ><span class="unfinished">In progress</span>
+    <v-responsive class="mx-auto" max-width="700">
+      <CommonProps title="In progress..." :totalNum="todos.length" />
       <v-data-table :headers="headers" :items="todos" items-per-page="5">
         <template v-slot:item="{ item }">
           <tr>
@@ -96,8 +98,8 @@ export default {
         </template>
       </v-data-table>
     </v-responsive>
-    <v-responsive class="mx-auto" max-width="700"
-      ><span class="finished">Completed</span>
+    <v-responsive class="mx-auto" max-width="700">
+      <CommonProps title="Done!!" :totalNum="completeTodos.length" />
       <v-data-table :headers="headers" :items="completeTodos" items-per-page="5">
         <template v-slot:item="{ item }">
           <tr>
@@ -114,14 +116,3 @@ export default {
     </v-responsive>
   </div>
 </template>
-
-<style scoped>
-.unfinished {
-  background-color: rgb(216, 187, 100);
-  padding: 5px;
-}
-.finished {
-  background-color: rgb(135, 211, 120);
-  padding: 5px;
-}
-</style>
