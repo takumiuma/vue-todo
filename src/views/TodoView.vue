@@ -1,7 +1,7 @@
 <script>
 import { mdiDelete, mdiPlaylistEdit } from '@mdi/js'
 import SvgIcon from '@jamescoyle/vue-icon'
-import CommonProps from '../components/CommonProps.vue'
+import TodoTableTitle from '../components/TodoTableTitle.vue'
 
 export default {
   data() {
@@ -25,7 +25,7 @@ export default {
   },
   components: {
     SvgIcon,
-    CommonProps
+    TodoTableTitle
   },
   computed: {},
   methods: {
@@ -80,7 +80,7 @@ export default {
       </v-form>
     </v-container>
     <v-responsive class="mx-auto" max-width="700">
-      <CommonProps title="In progress..." :totalNum="todos.length" />
+      <TodoTableTitle title="In progress..." :totalNum="todos.length" />
       <v-data-table :headers="headers" :items="todos" items-per-page="5">
         <template v-slot:item="{ item }">
           <tr>
@@ -99,7 +99,7 @@ export default {
       </v-data-table>
     </v-responsive>
     <v-responsive class="mx-auto" max-width="700">
-      <CommonProps title="Done!!" :totalNum="completeTodos.length" />
+      <TodoTableTitle title="Done!!" :totalNum="completeTodos.length" />
       <v-data-table :headers="headers" :items="completeTodos" items-per-page="5">
         <template v-slot:item="{ item }">
           <tr>
