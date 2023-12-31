@@ -3,13 +3,19 @@ export default {
   props: {
     title: String,
     totalNum: Number
+  },
+  methods: {
+    titleColor() {
+      return this.title === 'In progress...' ? 'unfinished' : 'finished'
+    }
   }
 }
 </script>
 <template>
-  <div :class="{ unfinished: title === 'In progress...', finished: title === 'Done!!' }">
-    <span>{{ title }}</span> <span>{{ totalNum }}</span>
-  </div>
+  <span :class="titleColor()">
+    {{ title }}
+    <v-chip>{{ totalNum }}</v-chip>
+  </span>
 </template>
 <style scoped>
 .unfinished {
