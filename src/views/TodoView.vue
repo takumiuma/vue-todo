@@ -2,6 +2,7 @@
 import { mdiDelete, mdiPlaylistEdit } from '@mdi/js'
 import SvgIcon from '@jamescoyle/vue-icon'
 import TodoTableTitle from '../components/TodoTableTitle.vue'
+import dayjs from 'dayjs'
 
 export default {
   data() {
@@ -13,6 +14,7 @@ export default {
       pics: ['担当者A', '担当者B', '担当者C'],
       pic: '',
       headers: [
+        { title: 'Created_Date', value: 'time' },
         { title: 'Content', value: 'todo' },
         { title: 'Person', value: 'pic' },
         { title: 'Command', value: 'decide' }
@@ -35,7 +37,7 @@ export default {
       const { valid } = await this.$refs.form.validate()
       if (!valid) return
 
-      this.todos.push({ id: this.id++, content: this.todo, pic: this.pic })
+      this.todos.push({ id: this.id++, content: this.todo, pic: this.pic, time: this.getTime() })
       this.$refs.form.reset()
     },
     deleteTodo(todo) {
@@ -50,6 +52,25 @@ export default {
       this.todos.push(todo)
       const index = this.completeTodos.indexOf(todo)
       this.completeTodos.splice(index, 1)
+    },
+    clearTodo(emptyTodos, target) {
+      if (target === 'todos') {
+        this.todos = emptyTodos
+      } else {
+        this.completeTodos = emptyTodos
+      }
+    },
+    moveTodo(list, target) {
+      if (target === 'todos') {
+        this.completeTodos.push(...list)
+        this.todos.splice(0)
+      } else {
+        this.todos.push(...list)
+        this.completeTodos.splice(0)
+      }
+    },
+    getTime() {
+      return dayjs().format('YYYY-MM-DD HH:mm')
     }
   }
 }
@@ -80,10 +101,16 @@ export default {
       </v-form>
     </v-container>
     <v-responsive class="mx-auto" max-width="700">
-      <TodoTableTitle title="In progress..." :totalNum="todos.length" />
+      <TodoTableTitle
+        title="In progress..."
+        :todoList="todos"
+        @clear-click="clearTodo($event, 'todos')"
+        @move-click="moveTodo($event, 'todos')"
+      />
       <v-data-table :headers="headers" :items="todos" items-per-page="5">
         <template v-slot:item="{ item }">
           <tr>
+            <td>{{ item.time }}</td>
             <td>{{ item.content }}</td>
             <td>{{ item.pic }}</td>
             <td>
@@ -99,10 +126,16 @@ export default {
       </v-data-table>
     </v-responsive>
     <v-responsive class="mx-auto" max-width="700">
-      <TodoTableTitle title="Done!!" :totalNum="completeTodos.length" />
+      <TodoTableTitle
+        title="Done!!"
+        :todoList="completeTodos"
+        @clear-click="clearTodo($event, 'completeTodos')"
+        @move-click="moveTodo($event, 'completeTodos')"
+      />
       <v-data-table :headers="headers" :items="completeTodos" items-per-page="5">
         <template v-slot:item="{ item }">
           <tr>
+            <td>{{ item.time }}</td>
             <td>{{ item.content }}</td>
             <td>{{ item.pic }}</td>
             <td>
