@@ -14,11 +14,13 @@ export default {
       pics: ['担当者A', '担当者B', '担当者C'],
       pic: '',
       headers: [
-        { title: 'Created_Date', value: 'time' },
-        { title: 'Content', value: 'todo' },
-        { title: 'Person', value: 'pic' },
-        { title: 'Command', value: 'decide' }
+        { title: 'Created_Date', value: 'time', width: '10%' },
+        { title: 'Content', value: 'todo', width: '40%' },
+        { title: 'Person', value: 'pic', width: '40%' },
+        { title: 'Command', value: 'decide', width: '10%' }
       ],
+      onEditTodo: false,
+      onEditPerson: false,
       icons: {
         mdiDelete,
         mdiPlaylistEdit
@@ -71,6 +73,12 @@ export default {
     },
     getTime() {
       return dayjs().format('YYYY-MM-DD HH:mm')
+    },
+    editStart(editTarget) {
+      editTarget === 'todo' ? (this.onEditTodo = true) : (this.onEditPerson = true)
+    },
+    editFinish(editTarget) {
+      editTarget === 'todo' ? (this.onEditTodo = false) : (this.onEditPerson = false)
     }
   }
 }
@@ -100,7 +108,7 @@ export default {
         </v-row>
       </v-form>
     </v-container>
-    <v-responsive class="mx-auto" max-width="700">
+    <v-responsive class="mx-auto">
       <TodoTableTitle
         title="In progress..."
         :todoList="todos"
@@ -111,8 +119,43 @@ export default {
         <template v-slot:item="{ item }">
           <tr>
             <td>{{ item.time }}</td>
-            <td>{{ item.content }}</td>
-            <td>{{ item.pic }}</td>
+            <td>
+              <span v-if="onEditTodo">
+                <v-row>
+                  <v-col cols="9">
+                    <v-text-field
+                      v-model="item.content"
+                      :rules="[required, limit_length]"
+                      counter="200"
+                      clearable
+                    ></v-text-field>
+                  </v-col>
+                  <v-col cols="3">
+                    <v-btn @click="editFinish('todo')">編集完了</v-btn>
+                  </v-col>
+                </v-row>
+              </span>
+              <span v-else>
+                {{ item.content }}
+                <v-btn @click="editStart('todo')">編集</v-btn>
+              </span>
+            </td>
+            <td>
+              <span v-if="onEditPerson">
+                <v-row>
+                  <v-col>
+                    <v-select :rules="[required]" v-model="item.pic" :items="pics"></v-select>
+                  </v-col>
+                  <v-col>
+                    <v-btn @click="editFinish('pic')">編集完了</v-btn>
+                  </v-col>
+                </v-row>
+              </span>
+              <span v-else>
+                {{ item.pic }}
+                <v-btn @click="editStart('pic')">編集</v-btn>
+              </span>
+            </td>
             <td>
               <v-btn @click="deleteTodo(item)">
                 <svg-icon type="mdi" :path="icons.mdiDelete"></svg-icon>削除
@@ -125,7 +168,7 @@ export default {
         </template>
       </v-data-table>
     </v-responsive>
-    <v-responsive class="mx-auto" max-width="700">
+    <v-responsive class="mx-auto">
       <TodoTableTitle
         title="Done!!"
         :todoList="completeTodos"
