@@ -16,11 +16,9 @@ export default {
       headers: [
         { title: 'Created_Date', value: 'time', width: '10%' },
         { title: 'Content', value: 'todo', width: '40%' },
-        { title: 'Person', value: 'pic', width: '40%' },
-        { title: 'Command', value: 'decide', width: '10%' }
+        { title: 'Person', value: 'pic', width: '30%' },
+        { title: 'Command', value: 'decide', width: '20%' }
       ],
-      onEditTodo: false,
-      onEditPerson: false,
       icons: {
         mdiDelete,
         mdiPlaylistEdit
@@ -33,28 +31,41 @@ export default {
   },
   computed: {},
   methods: {
+    //バリデーション
     required: (value) => !!value || '必ず入力してください',
     limit_length: (value) => value.length <= 200 || '200文字以内で入力してください',
+    //todo追加関数
     async addTodo() {
       const { valid } = await this.$refs.form.validate()
       if (!valid) return
 
-      this.todos.push({ id: this.id++, content: this.todo, pic: this.pic, time: this.getTime() })
+      this.todos.push({
+        id: this.id++,
+        content: this.todo,
+        pic: this.pic,
+        time: this.getTime(),
+        onEditTodo: false,
+        onEditPerson: false
+      })
       this.$refs.form.reset()
     },
+    //todoの削除（１つ）
     deleteTodo(todo) {
       const index = this.todos.indexOf(todo)
       this.todos.splice(index, 1)
     },
+    //todoを完了テーブルに移動（１つ）
     completeTodo(todo) {
       this.completeTodos.push(todo)
       this.deleteTodo(todo)
     },
+    //todoを仕掛かりテーブルに移動（１つ）
     returnTodo(todo) {
       this.todos.push(todo)
       const index = this.completeTodos.indexOf(todo)
       this.completeTodos.splice(index, 1)
     },
+    //指定したテーブルのtodos,またはcompleteTodosを全て削除
     clearTodo(emptyTodos, target) {
       if (target === 'todos') {
         this.todos = emptyTodos
@@ -62,6 +73,7 @@ export default {
         this.completeTodos = emptyTodos
       }
     },
+    //指定したテーブルのtodos,またはcompleteTodosを全て入れ替え
     moveTodo(list, target) {
       if (target === 'todos') {
         this.completeTodos.push(...list)
@@ -71,14 +83,29 @@ export default {
         this.completeTodos.splice(0)
       }
     },
+    //現在時刻を取得
     getTime() {
       return dayjs().format('YYYY-MM-DD HH:mm')
     },
-    editStart(editTarget) {
-      editTarget === 'todo' ? (this.onEditTodo = true) : (this.onEditPerson = true)
+    //itemごとのbool値プロパティを切り替え、編集用のタグを表示
+    editStart(editTarget, todo) {
+      const index = this.todos.indexOf(todo)
+      if (editTarget === 'todo') {
+        this.todos[index].onEditTodo = true
+      } else {
+        this.todos[index].onEditPerson = true
+      }
     },
-    editFinish(editTarget) {
-      editTarget === 'todo' ? (this.onEditTodo = false) : (this.onEditPerson = false)
+    async editFinish(editTarget, todo) {
+      const index = this.todos.indexOf(todo)
+      if (editTarget === 'todo') {
+        const { valid } = await this.$refs.todoEdit.validate()
+        if (!valid) return
+
+        this.todos[index].onEditTodo = false
+      } else {
+        this.todos[index].onEditPerson = false
+      }
     }
   }
 }
@@ -120,40 +147,42 @@ export default {
           <tr>
             <td>{{ item.time }}</td>
             <td>
-              <span v-if="onEditTodo">
-                <v-row>
-                  <v-col cols="9">
-                    <v-text-field
-                      v-model="item.content"
-                      :rules="[required, limit_length]"
-                      counter="200"
-                      clearable
-                    ></v-text-field>
-                  </v-col>
-                  <v-col cols="3">
-                    <v-btn @click="editFinish('todo')">編集完了</v-btn>
-                  </v-col>
-                </v-row>
+              <span v-if="item.onEditTodo">
+                <v-form ref="todoEdit">
+                  <v-row>
+                    <v-col cols="9">
+                      <v-text-field
+                        v-model="item.content"
+                        :rules="[required, limit_length]"
+                        counter="200"
+                        clearable
+                      ></v-text-field>
+                    </v-col>
+                    <v-col cols="3">
+                      <v-btn @click="editFinish('todo', item)">編集完了</v-btn>
+                    </v-col>
+                  </v-row>
+                </v-form>
               </span>
               <span v-else>
                 {{ item.content }}
-                <v-btn @click="editStart('todo')">編集</v-btn>
+                <v-btn @click="editStart('todo', item)">編集</v-btn>
               </span>
             </td>
             <td>
-              <span v-if="onEditPerson">
+              <span v-if="item.onEditPerson">
                 <v-row>
                   <v-col>
                     <v-select :rules="[required]" v-model="item.pic" :items="pics"></v-select>
                   </v-col>
                   <v-col>
-                    <v-btn @click="editFinish('pic')">編集完了</v-btn>
+                    <v-btn @click="editFinish('pic', item)">編集完了</v-btn>
                   </v-col>
                 </v-row>
               </span>
               <span v-else>
                 {{ item.pic }}
-                <v-btn @click="editStart('pic')">編集</v-btn>
+                <v-btn @click="editStart('pic', item)">編集</v-btn>
               </span>
             </td>
             <td>
