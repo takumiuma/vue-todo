@@ -56,6 +56,10 @@ export default {
     },
     // todoを完了テーブルに移動（１つ）
     completeTodo(todo) {
+      //対象のtodoが編集中なら処理が走らない
+      const index = this.todos.indexOf(todo)
+      if (this.todos[index].onEditTodo) return
+
       this.completeTodos.push(todo)
       this.deleteTodo(todo)
     },
@@ -76,6 +80,9 @@ export default {
     // 指定したテーブルのtodos,またはcompleteTodosを全て入れ替え
     moveTodo(list, target) {
       if (target === 'todos') {
+        //１つでも編集中であれば処理が走らない
+        if (list.some((item) => item.onEditTodo)) return
+
         this.completeTodos.push(...list)
         this.todos.splice(0)
       } else {
