@@ -34,18 +34,14 @@ export default {
 }
 </script>
 <template>
-  <div :class="titleColor()">
-    <v-row>
-      <v-col>
-        {{ title }}
-        <v-chip>{{ totalNum() }}</v-chip></v-col
-      >
-      <v-col justify="end">
-        <v-btn @click="sendEmpty()">リストを空にする</v-btn>
-        <v-btn @click="sendList()">{{ message }}</v-btn>
-      </v-col>
-    </v-row>
-  </div>
+  <v-layout :class="titleColor()">
+    {{ title }}
+    <v-chip>{{ totalNum() }}</v-chip>
+    <div class="ml-auto">
+      <v-btn @click="sendEmpty()">リストを空にする</v-btn>
+      <v-btn @click="sendList()">{{ message }}</v-btn>
+    </div>
+  </v-layout>
 </template>
 <style scoped>
 .unfinished {
