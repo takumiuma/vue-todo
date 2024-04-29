@@ -24,17 +24,34 @@
           </v-col>
         </v-row>
       </v-form>
-      <v-data-table :headers="todoHeader" :items="todos" hover>
+      <v-data-table :headers="todoHeader" :items="todos" :sort-by="sortByStatus" hover>
         <template #item="{ item }">
           <tr>
             <td>{{ item.id }}</td>
             <td>{{ item.title }}</td>
             <td>{{ item.person }}</td>
-            <td>{{ item.done ? 'Done' : 'In progress' }}</td>
             <td>
-              <v-btn @click="changeStatus(item)" size="small">
-                <svg-icon type="mdi" :path="icons.mdiChevronDoubleDown"></svg-icon>完了
-              </v-btn>
+              <v-row>
+                {{ item.done ? 'Done' : 'In progress' }}
+                <span v-if="!item.done">
+                  <svg-icon type="mdi" :path="icons.mdiWalk"></svg-icon>
+                </span>
+                <span v-if="item.done">
+                  <svg-icon type="mdi" :path="icons.mdiCheckboxMarkedOutline"></svg-icon>
+                </span>
+              </v-row>
+            </td>
+            <td>
+              <span v-if="!item.done">
+                <v-btn @click="changeStatus(item)" size="small">
+                  <svg-icon type="mdi" :path="icons.mdiChevronDoubleDown"></svg-icon>完了
+                </v-btn>
+              </span>
+              <span v-if="item.done">
+                <v-btn @click="changeStatus(item)" size="small">
+                  <svg-icon type="mdi" :path="icons.mdiChevronDoubleUp"></svg-icon>仕掛
+                </v-btn>
+              </span>
               <v-btn @click="editItem(item)" class="ma-2" size="small">
                 <svg-icon type="mdi" :path="icons.mdiPlaylistEdit"></svg-icon>
               </v-btn>
@@ -88,7 +105,15 @@
 
 <script>
 import axios from 'axios'
-import { mdiDelete, mdiPlaylistEdit, mdiPlaylistPlus, mdiChevronDoubleDown } from '@mdi/js'
+import {
+  mdiDelete,
+  mdiPlaylistEdit,
+  mdiPlaylistPlus,
+  mdiChevronDoubleDown,
+  mdiChevronDoubleUp,
+  mdiCheckboxMarkedOutline,
+  mdiWalk,
+} from '@mdi/js'
 import SvgIcon from '@jamescoyle/vue-icon'
 import Loading from 'vue-loading-overlay'
 import 'vue-loading-overlay/dist/css/index.css'
@@ -108,15 +133,17 @@ export default {
         id: null,
         title: '',
         person: '',
+        done: false,
       },
       todos: [],
       todoHeader: [
-        { title: 'ID', value: 'id', width: '5%' },
-        { title: 'Title', value: 'title', width: '40%' },
-        { title: 'Person', value: 'person', width: '20%' },
-        { title: 'Status', value: 'done', width: '10%' },
-        { title: 'Action', value: 'action', width: '25%' },
+        { title: 'ID', value: 'id', width: '5%', sortable: true },
+        { title: 'Title', value: 'title', width: '35%', sortable: true },
+        { title: 'Person', value: 'person', width: '20%', sortable: true },
+        { title: 'Status', value: 'done', width: '15%', sortable: true },
+        { title: 'Action', value: 'action', width: '25%', sortable: false },
       ],
+      sortByStatus: [{ key: 'done', order: 'asc' }],
       pics: ['担当者A', '担当者B', '担当者C'],
       pic: '',
       icons: {
@@ -124,6 +151,9 @@ export default {
         mdiPlaylistEdit,
         mdiPlaylistPlus,
         mdiChevronDoubleDown,
+        mdiChevronDoubleUp,
+        mdiCheckboxMarkedOutline,
+        mdiWalk,
       },
     }
   },
@@ -183,7 +213,6 @@ export default {
     async changeStatus(item) {
       this.isLoading = true
       const done = item.done ? false : true
-      console.log(done)
       await axios
         .put(`http://localhost:8080/v1/todos/${item.id}`, {
           title: item.title,
@@ -205,6 +234,7 @@ export default {
         id: item.id,
         title: item.title,
         person: item.person,
+        done: item.done,
       }
       this.dialog = true
     },
@@ -214,6 +244,7 @@ export default {
         .put(`http://localhost:8080/v1/todos/${this.editedItem.id}`, {
           title: this.editedItem.title,
           person: this.editedItem.person,
+          done: this.editedItem.done,
         })
         .then((response) => console.log(response.data))
         .catch((error) => {
