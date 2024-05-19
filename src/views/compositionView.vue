@@ -170,7 +170,6 @@ export default defineComponent({
     }
 
     const completeTodo = (todo: Todo) => {
-      //対象のtodoが編集中なら処理が走らない
       const index = todos.value.indexOf(todo)
       if (todos.value[index].onEditTodo) return
 

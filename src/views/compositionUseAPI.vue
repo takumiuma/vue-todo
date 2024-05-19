@@ -2,7 +2,7 @@
   <div>
     <loading v-model:active="isLoading" :enforce-focus="false" />
     <v-container>
-      <v-form ref="form">
+      <v-form v-model="validForm">
         <v-row>
           <v-col cols="6">
             <v-text-field
@@ -63,7 +63,7 @@
       </v-data-table>
     </v-container>
     <v-dialog v-model="dialog" max-width="600">
-      <v-form ref="editForm">
+      <v-form v-model="validEditForm">
         <v-sheet class="ma-5">
           <v-container>
             <v-row>
@@ -99,10 +99,10 @@
       </v-form>
     </v-dialog>
   </div>
-  <v-btn @click="check()">チェック</v-btn>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent, ref, onMounted } from 'vue'
 import axios from 'axios'
 import {
   mdiDelete,
@@ -117,100 +117,108 @@ import SvgIcon from '@jamescoyle/vue-icon'
 import Loading from 'vue-loading-overlay'
 import 'vue-loading-overlay/dist/css/index.css'
 
-export default {
+interface Todo {
+  id: number
+  title: string
+  person: string
+  done: boolean
+}
+
+let todos = ref<Todo[]>([])
+let todo = ref<string>('')
+let pic = ref<string>('')
+let dialog = ref(false)
+let isLoading = ref(false)
+let res = ref<Todo[] | null>([])
+let editedItem = ref<Todo>({
+  id: null,
+  title: '',
+  person: '',
+  done: false,
+})
+const validForm = ref(false)
+const validEditForm = ref(false)
+
+const todoHeader = [
+  { title: 'ID', value: 'id', width: '5%', sortable: true },
+  { title: 'Title', value: 'title', width: '35%', sortable: true },
+  { title: 'Person', value: 'person', width: '20%', sortable: true },
+  { title: 'Status', value: 'done', width: '15%', sortable: true },
+  { title: 'Action', value: 'action', width: '25%', sortable: false },
+]
+const sortByStatus = [{ key: 'done', order: 'asc' }]
+const pics = ['担当者A', '担当者B', '担当者C']
+const icons = {
+  mdiDelete,
+  mdiPlaylistEdit,
+  mdiPlaylistPlus,
+  mdiChevronDoubleDown,
+  mdiChevronDoubleUp,
+  mdiCheckboxMarkedOutline,
+  mdiWalk,
+}
+export default defineComponent({
   components: {
     Loading,
     SvgIcon,
   },
-  data() {
-    return {
-      dialog: false,
-      isLoading: false,
-      res: null,
-      todo: '',
-      editedItem: {
-        id: null,
-        title: '',
-        person: '',
-        done: false,
-      },
-      todos: [],
-      todoHeader: [
-        { title: 'ID', value: 'id', width: '5%', sortable: true },
-        { title: 'Title', value: 'title', width: '35%', sortable: true },
-        { title: 'Person', value: 'person', width: '20%', sortable: true },
-        { title: 'Status', value: 'done', width: '15%', sortable: true },
-        { title: 'Action', value: 'action', width: '25%', sortable: false },
-      ],
-      sortByStatus: [{ key: 'done', order: 'asc' }],
-      pics: ['担当者A', '担当者B', '担当者C'],
-      pic: '',
-      icons: {
-        mdiDelete,
-        mdiPlaylistEdit,
-        mdiPlaylistPlus,
-        mdiChevronDoubleDown,
-        mdiChevronDoubleUp,
-        mdiCheckboxMarkedOutline,
-        mdiWalk,
-      },
-    }
-  },
-  created() {
-    this.isLoading = true
-    this.initialize().then(() => {
-      this.isLoading = false
+
+  //   created() {
+  //     this.isLoading = true
+  //     this.initialize().then(() => {
+  //       this.isLoading = false
+  //     })
+  //   },
+  setup() {
+    onMounted(() => {
+      isLoading.value = true
+      initialize().then(() => {
+        isLoading.value = false
+      })
     })
-  },
-  methods: {
-    required: (value) => !!value || '必ず入力してください',
-    limit_length: (value) => value.length <= 200 || '200文字以内で入力してください',
-    async initialize() {
-      this.todos = []
+
+    const required = (value) => !!value || '必ず入力してください'
+    const limit_length = (value) => value.length <= 200 || '200文字以内で入力してください'
+
+    const initialize = async () => {
+      todos.value = []
       await axios
         .get('http://localhost:8080/v1/todos')
-        .then((response) => (this.res = response.data.todos))
+        .then((response) => (res.value = response.data.todos))
         .catch((error) => console.log(error))
-      if (!this.res) return
+      if (!res.value) return
 
-      this.res.forEach((res) =>
-        this.todos.push({
+      res.value.forEach((res) =>
+        todos.value.push({
           id: res.id.value,
           title: res.title.value,
           person: res.person.value,
           done: res.done.value,
         })
       )
-    },
-    check() {
-      console.log('this.res', this.res)
-      console.log('this.todos', this.todos)
-      console.log('this.todo', this.todo)
-      console.log('this.pic', this.pic)
-    },
-    async addTodo() {
-      const { valid } = await this.$refs.form.validate()
-      if (!valid) return
+    }
+    const addTodo = async () => {
+      if (!validForm.value) return
 
-      this.isLoading = true
+      isLoading.value = true
       await axios
         .post('http://localhost:8080/v1/todos', {
-          title: this.todo,
-          person: this.pic,
+          title: todo.value,
+          person: pic.value,
           done: false,
         })
         .then((response) => console.log(response.data))
         .catch((error) => {
           console.log(error)
-          this.isLoading = false
+          isLoading.value = false
         })
 
-      this.initialize().then(() => {
-        this.isLoading = false
+      initialize().then(() => {
+        isLoading.value = false
       })
-    },
-    async changeStatus(item) {
-      this.isLoading = true
+    }
+    const changeStatus = async (item) => {
+      isLoading.value = true
       const done = item.done ? false : true
       await axios
         .put(`http://localhost:8080/v1/todos/${item.id}`, {
@@ -221,55 +229,81 @@ export default {
         .then((response) => console.log(response.data))
         .catch((error) => {
           console.log(error)
-          this.isLoading = false
+          isLoading.value = false
         })
 
-      this.initialize().then(() => {
-        this.isLoading = false
+      initialize().then(() => {
+        isLoading.value = false
       })
-    },
-    editItem(item) {
-      this.editedItem = {
+    }
+    const editItem = (item) => {
+      editedItem.value = {
         id: item.id,
         title: item.title,
         person: item.person,
         done: item.done,
       }
-      this.dialog = true
-    },
-    async editSave() {
-      this.isLoading = true
+      dialog.value = true
+    }
+    const editSave = async () => {
+      if (!validEditForm.value) return
+
+      isLoading.value = true
       await axios
-        .put(`http://localhost:8080/v1/todos/${this.editedItem.id}`, {
-          title: this.editedItem.title,
-          person: this.editedItem.person,
-          done: this.editedItem.done,
+        .put(`http://localhost:8080/v1/todos/${editedItem.value.id}`, {
+          title: editedItem.value.title,
+          person: editedItem.value.person,
+          done: editedItem.value.done,
         })
         .then((response) => console.log(response.data))
         .catch((error) => {
           console.log(error)
-          this.isLoading = false
+          isLoading.value = false
         })
 
-      this.initialize().then(() => {
-        this.isLoading = false
+      initialize().then(() => {
+        isLoading.value = false
       })
-      this.dialog = false
-    },
-    async deleteTodo(item) {
-      this.isLoading = true
+      dialog.value = false
+    }
+    const deleteTodo = async (item) => {
+      isLoading.value = true
       await axios
         .delete(`http://localhost:8080/v1/todos/${item.id}`)
         .then((response) => console.log(response.data))
         .catch((error) => {
           console.log(error)
-          this.isLoading = false
+          isLoading.value = false
         })
 
-      this.initialize().then(() => {
-        this.isLoading = false
+      initialize().then(() => {
+        isLoading.value = false
       })
-    },
+    }
+
+    return {
+      todo,
+      todos,
+      pic,
+      dialog,
+      isLoading,
+      res,
+      editedItem,
+      pics,
+      todoHeader,
+      sortByStatus,
+      icons,
+      initialize,
+      addTodo,
+      editItem,
+      editSave,
+      deleteTodo,
+      changeStatus,
+      required,
+      limit_length,
+      validForm,
+      validEditForm,
+    }
   },
-}
+})
 </script>

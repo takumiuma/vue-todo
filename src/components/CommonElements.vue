@@ -34,9 +34,14 @@ export default {
         {
           title: 'Todo(API有,OptionsAPI)',
           icon: 'mdi-checkbox-multiple-marked-outline',
-          link: '/todo-render',
+          link: '/todo-use-api',
         },
         { title: 'Todo(API無,CompositionAPI', icon: 'mdi-checkbox-marked', link: '/composition' },
+        {
+          title: 'Todo(API有,CompositionAPI',
+          icon: 'mdi-checkbox-multiple-marked',
+          link: '/composition-use-api',
+        },
       ],
     }
   },

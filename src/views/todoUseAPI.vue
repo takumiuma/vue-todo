@@ -1,7 +1,6 @@
 <template>
-  <div class="about">
+  <div>
     <loading v-model:active="isLoading" :enforce-focus="false" />
-    <h1>This is an about page</h1>
     <v-container>
       <v-form ref="form">
         <v-row>
@@ -100,7 +99,6 @@
       </v-form>
     </v-dialog>
   </div>
-  <v-btn @click="check()">チェック</v-btn>
 </template>
 
 <script>
@@ -182,12 +180,6 @@ export default {
           done: res.done.value,
         })
       )
-    },
-    check() {
-      console.log('this.res', this.res)
-      console.log('this.todos', this.todos)
-      console.log('this.todo', this.todo)
-      console.log('this.pic', this.pic)
     },
     async addTodo() {
       const { valid } = await this.$refs.form.validate()

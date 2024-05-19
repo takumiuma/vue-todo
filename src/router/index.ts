@@ -10,14 +10,19 @@ const router = createRouter({
       component: () => import('../views/todoView.vue'),
     },
     {
-      path: '/todo-render',
-      name: 'todo-render',
-      component: () => import('../views/todoRender.vue'),
+      path: '/todo-use-api',
+      name: 'todo-use-api',
+      component: () => import('../views/todoUseAPI.vue'),
     },
     {
       path: '/composition',
       name: 'composition',
       component: () => import('../views/compositionView.vue'),
+    },
+    {
+      path: '/composition-use-api',
+      name: 'composition-use-api',
+      component: () => import('../views/compositionUseAPI.vue'),
     },
   ],
 })
