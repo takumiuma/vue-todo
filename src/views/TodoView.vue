@@ -17,17 +17,17 @@ export default {
         { title: 'Created_Date', value: 'time', width: '10%' },
         { title: 'Content', value: 'todo', width: '40%' },
         { title: 'Person', value: 'pic', width: '30%' },
-        { title: 'Command', value: 'decide', width: '20%' }
+        { title: 'Command', value: 'decide', width: '20%' },
       ],
       icons: {
         mdiDelete,
-        mdiPlaylistEdit
-      }
+        mdiPlaylistEdit,
+      },
     }
   },
   components: {
     SvgIcon,
-    TodoTableTitle
+    TodoTableTitle,
   },
   computed: {},
   methods: {
@@ -45,7 +45,7 @@ export default {
         pic: this.pic,
         time: this.getTime(),
         onEditTodo: false,
-        onEditPerson: false
+        onEditPerson: false,
       })
       this.$refs.form.reset()
     },
@@ -113,12 +113,12 @@ export default {
       } else {
         this.todos[index].onEditPerson = false
       }
-    }
-  }
+    },
+  },
 }
 </script>
 <template>
-  <div class="todoView">
+  <div>
     <v-container>
       <v-form ref="form">
         <v-row>

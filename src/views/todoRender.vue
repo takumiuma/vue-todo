@@ -1,7 +1,6 @@
 <template>
-  <div class="about">
+  <div>
     <loading v-model:active="isLoading" :enforce-focus="false" />
-    <h1>This is an about page</h1>
     <v-container>
       <v-form ref="form">
         <v-row>

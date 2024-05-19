@@ -10,7 +10,7 @@
       <v-list>
         <v-list-item v-for="item in items" :key="item.title" :to="item.link">
           <v-icon>{{ item.icon }}</v-icon>
-          {{ item.title }}
+          <p>{{ item.title }}</p>
         </v-list-item>
       </v-list>
     </v-navigation-drawer>
@@ -30,16 +30,20 @@ export default {
       drawer: false,
       group: null,
       items: [
-        { title: 'Home', icon: 'mdi-home', link: '/home' },
-        { title: 'About', icon: 'mdi-information', link: '/about' },
-        { title: 'Todo', icon: 'mdi-clipboard-text', link: '/' }
-      ]
+        { title: 'Todo(API無,OptionsAPI)', icon: 'mdi-checkbox-marked-outline', link: '/' },
+        {
+          title: 'Todo(API有,OptionsAPI)',
+          icon: 'mdi-checkbox-multiple-marked-outline',
+          link: '/todo-render',
+        },
+        { title: 'Todo(API無,CompositionAPI', icon: 'mdi-checkbox-marked', link: '/composition' },
+      ],
     }
   },
   watch: {
     group() {
       this.drawer = false
-    }
-  }
+    },
+  },
 }
 </script>
