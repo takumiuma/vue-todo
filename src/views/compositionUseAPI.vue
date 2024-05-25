@@ -23,7 +23,7 @@
           </v-col>
         </v-row>
       </v-form>
-      <v-data-table :headers="todoHeader" :items="todos" :sort-by="sortByStatus" hover>
+      <v-data-table :headers="todoHeader" :items="todoStore.todos" :sort-by="sortByStatus" hover>
         <template #item="{ item }">
           <tr>
             <td>{{ item.id }}</td>
@@ -101,9 +101,8 @@
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent, ref, onMounted } from 'vue'
-import axios from 'axios'
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
 import {
   mdiDelete,
   mdiPlaylistEdit,
@@ -116,29 +115,21 @@ import {
 import SvgIcon from '@jamescoyle/vue-icon'
 import Loading from 'vue-loading-overlay'
 import 'vue-loading-overlay/dist/css/index.css'
+import { useTodoStore } from '../store/use-todo-store.ts'
 
 interface Todo {
-  id: number | null
+  id: number
   title: string
   person: string
   done: boolean
 }
 
-interface RestTodo {
-  id: { value: number | null }
-  title: { value: string }
-  person: { value: string }
-  done: { value: boolean }
-}
-
-let todos = ref<Todo[]>([])
 let todo = ref<string>('')
 let pic = ref<string>('')
 let dialog = ref(false)
 let isLoading = ref(false)
-let res = ref<RestTodo[] | null>([])
 let editedItem = ref<Todo>({
-  id: null,
+  id: 0,
   title: '',
   person: '',
   done: false,
@@ -164,147 +155,88 @@ const icons = {
   mdiCheckboxMarkedOutline,
   mdiWalk,
 }
-export default defineComponent({
-  components: {
-    Loading,
-    SvgIcon,
-  },
 
-  setup() {
-    onMounted(() => {
-      isLoading.value = true
-      initialize().then(() => {
-        isLoading.value = false
-      })
-    })
+const todoStore = useTodoStore()
 
-    const required = (value: string) => !!value || '必ず入力してください'
-    const limit_length = (value: string) => value.length <= 200 || '200文字以内で入力してください'
-
-    const initialize = async () => {
-      todos.value = []
-      await axios
-        .get('http://localhost:8080/v1/todos')
-        .then((response) => (res.value = response.data.todos))
-        .catch((error) => console.log(error))
-      if (!res.value) return
-
-      todos.value = res.value.map((res) => {
-        return {
-          id: res.id.value,
-          title: res.title.value,
-          person: res.person.value,
-          done: res.done.value,
-        }
-      })
-    }
-    const addTodo = async () => {
-      if (!validForm.value) return
-
-      isLoading.value = true
-      await axios
-        .post('http://localhost:8080/v1/todos', {
-          title: todo.value,
-          person: pic.value,
-          done: false,
-        })
-        .then((response) => console.log(response.data))
-        .catch((error) => {
-          console.log(error)
-          isLoading.value = false
-        })
-
-      initialize().then(() => {
-        isLoading.value = false
-      })
-    }
-    const changeStatus = async (item: Todo) => {
-      isLoading.value = true
-      const done = item.done ? false : true
-      await axios
-        .put(`http://localhost:8080/v1/todos/${item.id}`, {
-          title: item.title,
-          person: item.person,
-          done: done,
-        })
-        .then((response) => console.log(response.data))
-        .catch((error) => {
-          console.log(error)
-          isLoading.value = false
-        })
-
-      initialize().then(() => {
-        isLoading.value = false
-      })
-    }
-    const editItem = (item: Todo) => {
-      editedItem.value = {
-        id: item.id,
-        title: item.title,
-        person: item.person,
-        done: item.done,
-      }
-      dialog.value = true
-    }
-    const editSave = async () => {
-      if (!validEditForm.value) return
-
-      isLoading.value = true
-      await axios
-        .put(`http://localhost:8080/v1/todos/${editedItem.value.id}`, {
-          title: editedItem.value.title,
-          person: editedItem.value.person,
-          done: editedItem.value.done,
-        })
-        .then((response) => console.log(response.data))
-        .catch((error) => {
-          console.log(error)
-          isLoading.value = false
-        })
-
-      initialize().then(() => {
-        isLoading.value = false
-      })
-      dialog.value = false
-    }
-    const deleteTodo = async (item: Todo) => {
-      isLoading.value = true
-      await axios
-        .delete(`http://localhost:8080/v1/todos/${item.id}`)
-        .then((response) => console.log(response.data))
-        .catch((error) => {
-          console.log(error)
-          isLoading.value = false
-        })
-
-      initialize().then(() => {
-        isLoading.value = false
-      })
-    }
-
-    return {
-      todo,
-      todos,
-      pic,
-      dialog,
-      isLoading,
-      res,
-      editedItem,
-      pics,
-      todoHeader,
-      sortByStatus,
-      icons,
-      initialize,
-      addTodo,
-      editItem,
-      editSave,
-      deleteTodo,
-      changeStatus,
-      required,
-      limit_length,
-      validForm,
-      validEditForm,
-    }
-  },
+onMounted(() => {
+  isLoading.value = true
+  initialize().then(() => {
+    isLoading.value = false
+  })
 })
+
+const required = (value: string) => !!value || '必ず入力してください'
+const limit_length = (value: string) => value.length <= 200 || '200文字以内で入力してください'
+
+const initialize = async () => {
+  const response = await todoStore.fetchTodos()
+  // TODO:responseから通信成功チェック
+  if (todoStore.todos.length === 0) return
+}
+const addTodo = async () => {
+  if (!validForm.value) return
+  const payload = {
+    id: undefined,
+    title: todo.value,
+    person: pic.value,
+    done: false,
+  }
+
+  isLoading.value = true
+  const response = await todoStore.createTodo(payload)
+  // TODO:responseから通信成功チェック
+  initialize().then(() => {
+    isLoading.value = false
+  })
+}
+const changeStatus = async (item: Todo) => {
+  const payload = {
+    id: item.id,
+    title: item.title,
+    person: item.person,
+    done: item.done ? false : true,
+  }
+
+  isLoading.value = true
+  const response = await todoStore.updateTodo(payload)
+  // TODO:responseから通信成功チェック
+  initialize().then(() => {
+    isLoading.value = false
+  })
+}
+const editItem = (item: Todo) => {
+  editedItem.value = {
+    id: item.id,
+    title: item.title,
+    person: item.person,
+    done: item.done,
+  }
+  dialog.value = true
+}
+const editSave = async () => {
+  if (!validEditForm.value) return
+  const payload = {
+    id: editedItem.value.id,
+    title: editedItem.value.title,
+    person: editedItem.value.person,
+    done: editedItem.value.done,
+  }
+
+  isLoading.value = true
+  const response = await todoStore.updateTodo(payload)
+  // TODO:responseから通信成功チェック
+  initialize().then(() => {
+    isLoading.value = false
+  })
+  dialog.value = false
+}
+const deleteTodo = async (item: Todo) => {
+  isLoading.value = true
+
+  const response = await todoStore.deleteTodo(item.id)
+  // TODO:responseから通信成功チェック
+  initialize().then(() => {
+    isLoading.value = false
+  })
+}
 </script>
