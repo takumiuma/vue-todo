@@ -118,10 +118,17 @@ import Loading from 'vue-loading-overlay'
 import 'vue-loading-overlay/dist/css/index.css'
 
 interface Todo {
-  id: number
+  id: number | null
   title: string
   person: string
   done: boolean
+}
+
+interface RestTodo {
+  id: { value: number | null }
+  title: { value: string }
+  person: { value: string }
+  done: { value: boolean }
 }
 
 let todos = ref<Todo[]>([])
@@ -129,7 +136,7 @@ let todo = ref<string>('')
 let pic = ref<string>('')
 let dialog = ref(false)
 let isLoading = ref(false)
-let res = ref<Todo[] | null>([])
+let res = ref<RestTodo[] | null>([])
 let editedItem = ref<Todo>({
   id: null,
   title: '',
@@ -163,12 +170,6 @@ export default defineComponent({
     SvgIcon,
   },
 
-  //   created() {
-  //     this.isLoading = true
-  //     this.initialize().then(() => {
-  //       this.isLoading = false
-  //     })
-  //   },
   setup() {
     onMounted(() => {
       isLoading.value = true
@@ -177,8 +178,8 @@ export default defineComponent({
       })
     })
 
-    const required = (value) => !!value || '必ず入力してください'
-    const limit_length = (value) => value.length <= 200 || '200文字以内で入力してください'
+    const required = (value: string) => !!value || '必ず入力してください'
+    const limit_length = (value: string) => value.length <= 200 || '200文字以内で入力してください'
 
     const initialize = async () => {
       todos.value = []
@@ -188,14 +189,14 @@ export default defineComponent({
         .catch((error) => console.log(error))
       if (!res.value) return
 
-      res.value.forEach((res) =>
-        todos.value.push({
+      todos.value = res.value.map((res) => {
+        return {
           id: res.id.value,
           title: res.title.value,
           person: res.person.value,
           done: res.done.value,
-        })
-      )
+        }
+      })
     }
     const addTodo = async () => {
       if (!validForm.value) return
@@ -217,7 +218,7 @@ export default defineComponent({
         isLoading.value = false
       })
     }
-    const changeStatus = async (item) => {
+    const changeStatus = async (item: Todo) => {
       isLoading.value = true
       const done = item.done ? false : true
       await axios
@@ -236,7 +237,7 @@ export default defineComponent({
         isLoading.value = false
       })
     }
-    const editItem = (item) => {
+    const editItem = (item: Todo) => {
       editedItem.value = {
         id: item.id,
         title: item.title,
@@ -266,7 +267,7 @@ export default defineComponent({
       })
       dialog.value = false
     }
-    const deleteTodo = async (item) => {
+    const deleteTodo = async (item: Todo) => {
       isLoading.value = true
       await axios
         .delete(`http://localhost:8080/v1/todos/${item.id}`)

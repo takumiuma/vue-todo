@@ -114,10 +114,10 @@ import TodoTableTitle from '../components/TodoTableTitle.vue'
 import dayjs from 'dayjs'
 
 interface Todo {
-  id: number
+  id: number | null
   content: string
   pic: string
-  time: date
+  time: string // dayjs.Dayjs
   onEditTodo: boolean
   onEditPerson: boolean
 }
@@ -127,7 +127,7 @@ let completeTodos = ref<Todo[]>([])
 let newTodo = ref<string>('')
 let pic = ref<string>('')
 
-const id = ref<number | null>(1)
+const id = ref<number>(1)
 const validNewTodo = ref(false)
 const validEditTodo = ref(false)
 
@@ -227,8 +227,8 @@ export default defineComponent({
       }
     }
 
-    const required = (value) => !!value || '必ず入力してください'
-    const limit_length = (value) => value.length <= 200 || '200文字以内で入力してください'
+    const required = (value: string) => !!value || '必ず入力してください'
+    const limit_length = (value: string) => value.length <= 200 || '200文字以内で入力してください'
 
     return {
       newTodo,
