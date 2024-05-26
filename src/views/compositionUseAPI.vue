@@ -1,6 +1,60 @@
 <template>
   <div>
     <loading v-model:active="isLoading" :enforce-focus="false" />
+    <v-dialog v-model="userRegistDialog" max-width="600">
+      <v-form v-model="validUserForm">
+        <v-sheet class="ma-5">
+          <v-container>
+            <v-row>
+              <v-col>
+                <v-text-field
+                  v-model="user.name"
+                  :rules="[required]"
+                  counter="200"
+                  clearable
+                  label="氏名"
+                >
+                </v-text-field>
+              </v-col>
+            </v-row>
+            <v-row>
+              <v-col>
+                <v-text-field
+                  v-model="user.phoneNumber"
+                  :rules="[required]"
+                  counter="200"
+                  clearable
+                  label="氏名"
+                >
+                </v-text-field>
+              </v-col>
+            </v-row>
+            <v-row>
+              <v-col>
+                <v-text-field
+                  v-model="user.email"
+                  :rules="[required]"
+                  counter="200"
+                  clearable
+                  label="氏名"
+                >
+                </v-text-field>
+              </v-col>
+            </v-row>
+            <v-row justify="end">
+              <v-btn
+                variant="outlined"
+                color="primary"
+                @click="userRegistDialog = false"
+                class="pa-1 mr-2"
+                >キャンセル</v-btn
+              >
+              <v-btn color="primary" @click="execUserRegist()">保存</v-btn>
+            </v-row>
+          </v-container>
+        </v-sheet>
+      </v-form>
+    </v-dialog>
     <v-container>
       <v-form v-model="validForm">
         <v-row>
@@ -62,7 +116,7 @@
         </template>
       </v-data-table>
     </v-container>
-    <v-dialog v-model="dialog" max-width="600">
+    <v-dialog v-model="editTodoDialog" max-width="600">
       <v-form v-model="validEditForm">
         <v-sheet class="ma-5">
           <v-container>
@@ -89,7 +143,11 @@
               </v-col>
             </v-row>
             <v-row justify="end">
-              <v-btn variant="outlined" color="primary" @click="dialog = false" class="pa-1 mr-2"
+              <v-btn
+                variant="outlined"
+                color="primary"
+                @click="editTodoDialog = false"
+                class="pa-1 mr-2"
                 >キャンセル</v-btn
               >
               <v-btn color="primary" @click="editSave()">保存</v-btn>
@@ -116,6 +174,7 @@ import SvgIcon from '@jamescoyle/vue-icon'
 import Loading from 'vue-loading-overlay'
 import 'vue-loading-overlay/dist/css/index.css'
 import { useTodoStore } from '../store/use-todo-store.ts'
+import { useUserStore } from '../store/use-user-store.ts'
 
 interface Todo {
   id: number
@@ -124,18 +183,36 @@ interface Todo {
   done: boolean
 }
 
+interface User {
+  id: number | undefined
+  name: string
+  email: string
+  phoneNumber: string
+}
+
+let user = ref<User>({
+  id: undefined,
+  name: '',
+  email: '',
+  phoneNumber: '',
+})
 let todo = ref<string>('')
 let pic = ref<string>('')
-let dialog = ref(false)
-let isLoading = ref(false)
 let editedItem = ref<Todo>({
   id: 0,
   title: '',
   person: '',
   done: false,
 })
-const validForm = ref(false)
-const validEditForm = ref(false)
+
+const validForm = ref<boolean>(false)
+const validUserForm = ref<boolean>(false)
+const validEditForm = ref<boolean>(false)
+let userRegistDialog = ref<boolean>(false)
+let editTodoDialog = ref<boolean>(false)
+let isLoading = ref<boolean>(false)
+
+let pics = ref<string[]>([])
 
 const todoHeader = [
   { title: 'ID', value: 'id', width: '5%', sortable: true },
@@ -145,7 +222,7 @@ const todoHeader = [
   { title: 'Action', value: 'action', width: '25%', sortable: false },
 ]
 const sortByStatus = [{ key: 'done', order: 'asc' }]
-const pics = ['担当者A', '担当者B', '担当者C']
+// const pics = ['担当者A', '担当者B', '担当者C']
 const icons = {
   mdiDelete,
   mdiPlaylistEdit,
@@ -157,6 +234,7 @@ const icons = {
 }
 
 const todoStore = useTodoStore()
+const userStore = useUserStore()
 
 onMounted(() => {
   isLoading.value = true
@@ -169,9 +247,25 @@ const required = (value: string) => !!value || '必ず入力してください'
 const limit_length = (value: string) => value.length <= 200 || '200文字以内で入力してください'
 
 const initialize = async () => {
-  const response = await todoStore.fetchTodos()
+  const responseTodos = await todoStore.fetchTodos()
   // TODO:responseから通信成功チェック
   if (todoStore.todos.length === 0) return
+
+  const responseUsers = await userStore.fetchUsers()
+  // TODO:responseから通信成功チェック
+  if (userStore.users.length === 0) return
+  pics.value = userStore.users.map((user: User) => user.name)
+}
+const execUserRegist = async () => {
+  if (!validUserForm.value) return
+  const payload = {
+    id: undefined,
+    name: user.value.name,
+    email: user.value.email,
+    phone_number: user.value.phoneNumber,
+  }
+
+  // 以下登録API
 }
 const addTodo = async () => {
   if (!validForm.value) return
@@ -211,7 +305,7 @@ const editItem = (item: Todo) => {
     person: item.person,
     done: item.done,
   }
-  dialog.value = true
+  editTodoDialog.value = true
 }
 const editSave = async () => {
   if (!validEditForm.value) return
@@ -228,7 +322,7 @@ const editSave = async () => {
   initialize().then(() => {
     isLoading.value = false
   })
-  dialog.value = false
+  editTodoDialog.value = false
 }
 const deleteTodo = async (item: Todo) => {
   isLoading.value = true
