@@ -17,12 +17,12 @@ interface ResponseUser {
   phone_number: { value: boolean }
 }
 
-// interface RequestUser {
-//   id: number | undefined
-//   title: string
-//   person: string
-//   done: boolean
-// }
+interface RequestUser {
+  id: number | undefined
+  name: string
+  email: string
+  phone_number: string
+}
 
 export const useUserStore = defineStore('user', {
   state: () => ({
@@ -45,13 +45,13 @@ export const useUserStore = defineStore('user', {
         })
         .catch((error) => console.log(error))
     },
-    // async registUser(payload: RequestTodo) {
-    //   return await axios
-    //     .post(`${apiUrl}/v1/todos`, payload)
-    //     .then((response) => console.log(response.data))
-    //     .catch((error) => {
-    //       console.log(error)
-    //     })
-    // },
+    async registUser(payload: RequestUser) {
+      return await axios
+        .post(`${apiUrl}/v1/users`, payload)
+        .then((response) => console.log(response.data))
+        .catch((error) => {
+          console.log(error)
+        })
+    },
   },
 })

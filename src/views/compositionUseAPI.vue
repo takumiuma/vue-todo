@@ -1,12 +1,13 @@
 <template>
   <div>
     <loading v-model:active="isLoading" :enforce-focus="false" />
+    <v-toolbar class="text-h5" density="Application" title="Todo" color="white"></v-toolbar>
     <v-dialog v-model="userRegistDialog" max-width="600">
       <v-form v-model="validUserForm">
         <v-sheet class="ma-5">
           <v-container>
             <v-row>
-              <v-col>
+              <v-col class="mx-4">
                 <v-text-field
                   v-model="user.name"
                   :rules="[required]"
@@ -18,38 +19,42 @@
               </v-col>
             </v-row>
             <v-row>
-              <v-col>
-                <v-text-field
-                  v-model="user.phoneNumber"
-                  :rules="[required]"
-                  counter="200"
-                  clearable
-                  label="氏名"
-                >
-                </v-text-field>
-              </v-col>
-            </v-row>
-            <v-row>
-              <v-col>
+              <v-col class="mx-4">
                 <v-text-field
                   v-model="user.email"
                   :rules="[required]"
                   counter="200"
                   clearable
-                  label="氏名"
+                  label="メールアドレス"
+                >
+                </v-text-field>
+              </v-col>
+            </v-row>
+            <v-row>
+              <v-col class="mx-4">
+                <v-text-field
+                  v-model="user.phoneNumber"
+                  :rules="[required]"
+                  counter="200"
+                  clearable
+                  label="電話番号"
                 >
                 </v-text-field>
               </v-col>
             </v-row>
             <v-row justify="end">
-              <v-btn
-                variant="outlined"
-                color="primary"
-                @click="userRegistDialog = false"
-                class="pa-1 mr-2"
-                >キャンセル</v-btn
-              >
-              <v-btn color="primary" @click="execUserRegist()">保存</v-btn>
+              <div>
+                <v-col>
+                  <v-btn
+                    variant="outlined"
+                    color="primary"
+                    @click="userRegistDialog = false"
+                    class="pa-1 mr-2"
+                    >キャンセル</v-btn
+                  >
+                  <v-btn color="primary" @click="execRegistUser()">保存</v-btn>
+                </v-col>
+              </div>
             </v-row>
           </v-container>
         </v-sheet>
@@ -67,12 +72,22 @@
               label="TODOを入力"
             ></v-text-field>
           </v-col>
-          <v-col cols="4">
+          <v-col cols="3">
             <v-select :rules="[required]" label="担当者" v-model="pic" :items="pics"></v-select>
           </v-col>
-          <v-col cols="2">
-            <v-btn height="55" color="primary" @click="addTodo()">
+          <v-col cols="3">
+            <v-btn height="40px" size="small" color="primary" @click="addTodo()">
               <svg-icon type="mdi" :path="icons.mdiPlaylistPlus"></svg-icon>追加
+            </v-btn>
+            <v-btn
+              class="ml-2"
+              height="40px"
+              size="small"
+              color="primary"
+              variant="outlined"
+              @click="userRegistDialog = true"
+            >
+              <svg-icon type="mdi" :path="icons.mdiAccountPlus"></svg-icon>担当者登録
             </v-btn>
           </v-col>
         </v-row>
@@ -169,6 +184,7 @@ import {
   mdiChevronDoubleUp,
   mdiCheckboxMarkedOutline,
   mdiWalk,
+  mdiAccountPlus,
 } from '@mdi/js'
 import SvgIcon from '@jamescoyle/vue-icon'
 import Loading from 'vue-loading-overlay'
@@ -231,6 +247,7 @@ const icons = {
   mdiChevronDoubleUp,
   mdiCheckboxMarkedOutline,
   mdiWalk,
+  mdiAccountPlus,
 }
 
 const todoStore = useTodoStore()
@@ -256,7 +273,7 @@ const initialize = async () => {
   if (userStore.users.length === 0) return
   pics.value = userStore.users.map((user: User) => user.name)
 }
-const execUserRegist = async () => {
+const execRegistUser = async () => {
   if (!validUserForm.value) return
   const payload = {
     id: undefined,
@@ -265,7 +282,12 @@ const execUserRegist = async () => {
     phone_number: user.value.phoneNumber,
   }
 
-  // 以下登録API
+  isLoading.value = true
+  const response = await userStore.registUser(payload)
+  // TODO:responseから通信成功チェック
+  initialize().then(() => {
+    isLoading.value = false
+  })
 }
 const addTodo = async () => {
   if (!validForm.value) return
