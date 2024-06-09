@@ -1,19 +1,23 @@
 <template>
   <div>
     <loading v-model:active="isLoading" :enforce-focus="false" />
-    <v-toolbar class="text-h5" density="Application" title="Todo" color="white"></v-toolbar>
-    <v-dialog v-model="userRegistDialog" max-width="600">
-      <v-form v-model="validUserForm">
+    <v-dialog v-model="userRegistDialog" max-width="600" persistent>
+      <v-form ref="validUserForm">
         <v-sheet class="ma-5">
           <v-container>
+            <v-row v-for="message in messages" :key="message">{{ message }}</v-row>
             <v-row>
               <v-col class="mx-4">
+                <!-- 引数指定しないとlinterエラー。暫定でundefinedを指定。 -->
                 <v-text-field
                   v-model="user.name"
-                  :rules="[required]"
-                  counter="200"
+                  :rules="[required('氏名'), limit_length(20, '氏名')]"
+                  counter="20"
                   clearable
                   label="氏名"
+                  hide-details
+                  @blur="userValidate"
+                  @update:model-value="userValidate"
                 >
                 </v-text-field>
               </v-col>
@@ -22,10 +26,13 @@
               <v-col class="mx-4">
                 <v-text-field
                   v-model="user.email"
-                  :rules="[required]"
-                  counter="200"
+                  :rules="[required('メールアドレス'), limit_length(30, 'メールアドレス')]"
+                  counter="30"
                   clearable
                   label="メールアドレス"
+                  hide-details
+                  @blur="userValidate"
+                  @update:model-value="userValidate"
                 >
                 </v-text-field>
               </v-col>
@@ -34,10 +41,13 @@
               <v-col class="mx-4">
                 <v-text-field
                   v-model="user.phoneNumber"
-                  :rules="[required]"
-                  counter="200"
+                  :rules="[required('電話番号'), limit_length(11, '電話番号')]"
+                  counter="11"
                   clearable
                   label="電話番号"
+                  hide-details
+                  @blur="userValidate"
+                  @update:model-value="userValidate"
                 >
                 </v-text-field>
               </v-col>
@@ -48,7 +58,7 @@
                   <v-btn
                     variant="outlined"
                     color="primary"
-                    @click="userRegistDialog = false"
+                    @click="(userRegistDialog = false), validUserForm.reset()"
                     class="pa-1 mr-2"
                     >キャンセル</v-btn
                   >
@@ -66,14 +76,19 @@
           <v-col cols="6">
             <v-text-field
               v-model="todo"
-              :rules="[required, limit_length]"
+              :rules="[required(undefined), limit_length(200, undefined)]"
               counter="200"
               clearable
               label="TODOを入力"
             ></v-text-field>
           </v-col>
           <v-col cols="3">
-            <v-select :rules="[required]" label="担当者" v-model="pic" :items="pics"></v-select>
+            <v-select
+              :rules="[required(undefined)]"
+              label="担当者"
+              v-model="pic"
+              :items="pics"
+            ></v-select>
           </v-col>
           <v-col cols="3">
             <v-btn height="40px" size="small" color="primary" @click="addTodo()">
@@ -131,7 +146,7 @@
         </template>
       </v-data-table>
     </v-container>
-    <v-dialog v-model="editTodoDialog" max-width="600">
+    <v-dialog v-model="editTodoDialog" max-width="600" persistent>
       <v-form v-model="validEditForm">
         <v-sheet class="ma-5">
           <v-container>
@@ -139,7 +154,7 @@
               <v-col>
                 <v-text-field
                   v-model="editedItem.title"
-                  :rules="[required, limit_length]"
+                  :rules="[required(undefined), limit_length(200, undefined)]"
                   counter="200"
                   clearable
                   label="TODOを入力"
@@ -150,7 +165,7 @@
             <v-row>
               <v-col>
                 <v-select
-                  :rules="[required]"
+                  :rules="[required(undefined)]"
                   label="担当者"
                   v-model="editedItem.person"
                   :items="pics"
@@ -221,8 +236,9 @@ let editedItem = ref<Todo>({
   done: false,
 })
 
+const messages = ref<string[]>([])
 const validForm = ref<boolean>(false)
-const validUserForm = ref<boolean>(false)
+const validUserForm = ref<any>({}) // Promiseの初期値がわからず、linterエラー出るため暫定対応
 const validEditForm = ref<boolean>(false)
 let userRegistDialog = ref<boolean>(false)
 let editTodoDialog = ref<boolean>(false)
@@ -260,8 +276,11 @@ onMounted(() => {
   })
 })
 
-const required = (value: string) => !!value || '必ず入力してください'
-const limit_length = (value: string) => value.length <= 200 || '200文字以内で入力してください'
+const required = (label: string | undefined) => (value: string) =>
+  !!value || (label ? `${label}は必ず入力してください` : '必ず入力してください')
+const limit_length = (max: number, label: string | undefined) => (value: string) =>
+  value.length <= max ||
+  (label ? `${label}は${max}文字以内で入力してください` : `${max}文字以内で入力してください`)
 
 const initialize = async () => {
   const responseTodos = await todoStore.fetchTodos()
@@ -273,8 +292,26 @@ const initialize = async () => {
   if (userStore.users.length === 0) return
   pics.value = userStore.users.map((user: User) => user.name)
 }
+
+const userValidate = async () => {
+  const validResult = await validUserForm.value.validate()
+  if (!validResult.valid) {
+    console.log(validResult.errors)
+    messages.value = validResult.errors.map((err: { errorMessages: string[] }) =>
+      err.errorMessages
+        .map((errMsg: string) => errMsg)
+        .join(',')
+        .replace(',', '\n')
+    )
+    return validResult
+  }
+  messages.value = []
+  return validResult
+}
 const execRegistUser = async () => {
-  if (!validUserForm.value) return
+  const isValid = await userValidate()
+  if (!isValid) return
+
   const payload = {
     id: undefined,
     name: user.value.name,
@@ -287,6 +324,7 @@ const execRegistUser = async () => {
   // TODO:responseから通信成功チェック
   initialize().then(() => {
     isLoading.value = false
+    validUserForm.value.reset()
   })
 }
 const addTodo = async () => {
@@ -303,6 +341,7 @@ const addTodo = async () => {
   // TODO:responseから通信成功チェック
   initialize().then(() => {
     isLoading.value = false
+    // TODO:テキストクリア
   })
 }
 const changeStatus = async (item: Todo) => {
