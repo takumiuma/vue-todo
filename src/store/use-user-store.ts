@@ -42,15 +42,20 @@ export const useUserStore = defineStore('user', {
               phone_number: todo.phone_number.value,
             }
           })
+          return { isSuccess: true, message: '利用者の取得に成功しました' }
         })
-        .catch((error) => console.log(error))
+        .catch(() => {
+          return { isSuccess: false, message: '利用者を取得に失敗しました' }
+        })
     },
     async registUser(payload: RequestUser) {
       return await axios
         .post(`${apiUrl}/v1/users`, payload)
-        .then((response) => console.log(response.data))
-        .catch((error) => {
-          console.log(error)
+        .then(() => {
+          return { isSuccess: true, message: '利用者の登録に成功しました' }
+        })
+        .catch(() => {
+          return { isSuccess: false, message: '利用者の登録に失敗しました' }
         })
     },
   },

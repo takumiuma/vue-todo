@@ -46,31 +46,40 @@ export const useTodoStore = defineStore('todo', {
               done: todo.done.value,
             }
           })
+          return { isSuccess: true, message: 'Todoの取得に成功しました' }
         })
-        .catch((error) => console.log(error))
+        .catch(() => {
+          return { isSuccess: false, message: 'Todoの取得に失敗しました' }
+        })
     },
     async createTodo(payload: RequestTodo) {
       return await axios
         .post(`${apiUrl}/v1/todos`, payload)
-        .then((response) => console.log(response.data))
-        .catch((error) => {
-          console.log(error)
+        .then(() => {
+          return { isSuccess: true, message: 'Todoの登録に成功しました' }
+        })
+        .catch(() => {
+          return { isSuccess: false, message: 'Todoの登録に失敗しました' }
         })
     },
     async updateTodo(payload: RequestTodo) {
       return await axios
         .put(`${apiUrl}/v1/todos/${payload.id}`, payload)
-        .then((response) => console.log(response.data))
-        .catch((error) => {
-          console.log(error)
+        .then(() => {
+          return { isSuccess: true, message: 'Todoの更新に成功しました' }
+        })
+        .catch(() => {
+          return { isSuccess: false, message: 'Todoの更新に失敗しました' }
         })
     },
     async deleteTodo(id: number) {
       return await axios
         .delete(`${apiUrl}/v1/todos/${id}`)
-        .then((response) => console.log(response.data))
-        .catch((error) => {
-          console.log(error)
+        .then(() => {
+          return { isSuccess: true, message: 'Todoの削除に成功しました' }
+        })
+        .catch(() => {
+          return { isSuccess: false, message: 'Todoの削除に失敗しました' }
         })
     },
   },

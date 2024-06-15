@@ -1,14 +1,19 @@
 <template>
   <div>
     <loading v-model:active="isLoading" :enforce-focus="false" />
+    <v-alert v-if="alert.visible" density="compact" :type="alert.type">{{ alert.message }}</v-alert>
     <v-dialog v-model="userRegistDialog" max-width="600" persistent>
       <v-form ref="validUserForm">
         <v-sheet class="ma-5">
           <v-container>
-            <v-row v-for="message in messages" :key="message">{{ message }}</v-row>
+            <v-row
+              class="ml-4 text-red-darken-4 font-weight-bold"
+              v-for="message in messages"
+              :key="message"
+              >{{ message }}</v-row
+            >
             <v-row>
               <v-col class="mx-4">
-                <!-- 引数指定しないとlinterエラー。暫定でundefinedを指定。 -->
                 <v-text-field
                   v-model="user.name"
                   :rules="[required('氏名'), limit_length(20, '氏名')]"
@@ -71,9 +76,10 @@
       </v-form>
     </v-dialog>
     <v-container>
-      <v-form v-model="validForm">
+      <v-form ref="validForm">
         <v-row>
           <v-col cols="6">
+            <!-- 引数指定しないとlinterエラー。暫定でundefinedを指定。 -->
             <v-text-field
               v-model="todo"
               :rules="[required(undefined), limit_length(200, undefined)]"
@@ -147,7 +153,7 @@
       </v-data-table>
     </v-container>
     <v-dialog v-model="editTodoDialog" max-width="600" persistent>
-      <v-form v-model="validEditForm">
+      <v-form ref="validEditForm">
         <v-sheet class="ma-5">
           <v-container>
             <v-row>
@@ -190,7 +196,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import {
   mdiDelete,
   mdiPlaylistEdit,
@@ -221,6 +227,17 @@ interface User {
   phoneNumber: string
 }
 
+interface Alert {
+  visible: boolean
+  type: string
+  message: string
+}
+
+interface ResponseResult {
+  isSuccess: boolean
+  message: string
+}
+
 let user = ref<User>({
   id: undefined,
   name: '',
@@ -237,12 +254,19 @@ let editedItem = ref<Todo>({
 })
 
 const messages = ref<string[]>([])
-const validForm = ref<boolean>(false)
-const validUserForm = ref<any>({}) // Promiseの初期値がわからず、linterエラー出るため暫定対応
-const validEditForm = ref<boolean>(false)
+// Promiseの<>指定がわからず、linterエラー出るため暫定対応
+const validForm = ref<any>({})
+const validUserForm = ref<any>({})
+const validEditForm = ref<any>({})
+
 let userRegistDialog = ref<boolean>(false)
 let editTodoDialog = ref<boolean>(false)
 let isLoading = ref<boolean>(false)
+let alert = ref<Alert>({
+  visible: false,
+  type: '',
+  message: '',
+})
 
 let pics = ref<string[]>([])
 
@@ -254,7 +278,6 @@ const todoHeader = [
   { title: 'Action', value: 'action', width: '25%', sortable: false },
 ]
 const sortByStatus = [{ key: 'done', order: 'asc' }]
-// const pics = ['担当者A', '担当者B', '担当者C']
 const icons = {
   mdiDelete,
   mdiPlaylistEdit,
@@ -282,13 +305,43 @@ const limit_length = (max: number, label: string | undefined) => (value: string)
   value.length <= max ||
   (label ? `${label}は${max}文字以内で入力してください` : `${max}文字以内で入力してください`)
 
+watch(alert, () => {
+  if (alert.value.visible) {
+    setTimeout(() => {
+      alert.value.visible = false
+    }, 10000)
+  }
+})
+
+const displayError = (result: ResponseResult) => {
+  if (result.isSuccess) return false
+
+  alert.value = {
+    visible: true,
+    type: 'error',
+    message: result.message,
+  }
+  return true
+}
+
+const displaySuccess = (result: ResponseResult) => {
+  if (!result.isSuccess) return false
+
+  alert.value = {
+    visible: true,
+    type: 'success',
+    message: result.message,
+  }
+  return true
+}
+
 const initialize = async () => {
   const responseTodos = await todoStore.fetchTodos()
-  // TODO:responseから通信成功チェック
+  if (displayError(responseTodos)) return
   if (todoStore.todos.length === 0) return
 
   const responseUsers = await userStore.fetchUsers()
-  // TODO:responseから通信成功チェック
+  if (displayError(responseUsers)) return
   if (userStore.users.length === 0) return
   pics.value = userStore.users.map((user: User) => user.name)
 }
@@ -296,7 +349,6 @@ const initialize = async () => {
 const userValidate = async () => {
   const validResult = await validUserForm.value.validate()
   if (!validResult.valid) {
-    console.log(validResult.errors)
     messages.value = validResult.errors.map((err: { errorMessages: string[] }) =>
       err.errorMessages
         .map((errMsg: string) => errMsg)
@@ -309,8 +361,8 @@ const userValidate = async () => {
   return validResult
 }
 const execRegistUser = async () => {
-  const isValid = await userValidate()
-  if (!isValid) return
+  const { valid } = await userValidate()
+  if (!valid) return
 
   const payload = {
     id: undefined,
@@ -320,15 +372,16 @@ const execRegistUser = async () => {
   }
 
   isLoading.value = true
-  const response = await userStore.registUser(payload)
-  // TODO:responseから通信成功チェック
+  const responseResult = await userStore.registUser(payload)
+  responseResult.isSuccess ? displaySuccess(responseResult) : displayError(responseResult)
   initialize().then(() => {
     isLoading.value = false
     validUserForm.value.reset()
   })
 }
 const addTodo = async () => {
-  if (!validForm.value) return
+  const { valid } = await validForm.value.validate()
+  if (!valid) return
   const payload = {
     id: undefined,
     title: todo.value,
@@ -337,11 +390,11 @@ const addTodo = async () => {
   }
 
   isLoading.value = true
-  const response = await todoStore.createTodo(payload)
-  // TODO:responseから通信成功チェック
+  const responseResult = await todoStore.createTodo(payload)
+  responseResult.isSuccess ? displaySuccess(responseResult) : displayError(responseResult)
   initialize().then(() => {
     isLoading.value = false
-    // TODO:テキストクリア
+    validForm.value.reset()
   })
 }
 const changeStatus = async (item: Todo) => {
@@ -353,8 +406,8 @@ const changeStatus = async (item: Todo) => {
   }
 
   isLoading.value = true
-  const response = await todoStore.updateTodo(payload)
-  // TODO:responseから通信成功チェック
+  const responseResult = await todoStore.updateTodo(payload)
+  responseResult.isSuccess ? displaySuccess(responseResult) : displayError(responseResult)
   initialize().then(() => {
     isLoading.value = false
   })
@@ -369,7 +422,8 @@ const editItem = (item: Todo) => {
   editTodoDialog.value = true
 }
 const editSave = async () => {
-  if (!validEditForm.value) return
+  const { valid } = await validEditForm.value.validate()
+  if (!valid) return
   const payload = {
     id: editedItem.value.id,
     title: editedItem.value.title,
@@ -378,18 +432,19 @@ const editSave = async () => {
   }
 
   isLoading.value = true
-  const response = await todoStore.updateTodo(payload)
-  // TODO:responseから通信成功チェック
+  const responseResult = await todoStore.updateTodo(payload)
+  responseResult.isSuccess ? displaySuccess(responseResult) : displayError(responseResult)
   initialize().then(() => {
     isLoading.value = false
+    validEditForm.value.reset()
   })
   editTodoDialog.value = false
 }
 const deleteTodo = async (item: Todo) => {
   isLoading.value = true
 
-  const response = await todoStore.deleteTodo(item.id)
-  // TODO:responseから通信成功チェック
+  const responseResult = await todoStore.deleteTodo(item.id)
+  responseResult.isSuccess ? displaySuccess(responseResult) : displayError(responseResult)
   initialize().then(() => {
     isLoading.value = false
   })
