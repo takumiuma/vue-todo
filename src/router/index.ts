@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import TodoView from '../views/TodoView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -8,19 +7,24 @@ const router = createRouter({
       path: '/',
       name: 'todoView',
 
-      component: TodoView
+      component: () => import('../views/todoView.vue'),
     },
     {
-      path: '/about',
-      name: 'about',
-      component: () => import('../views/AboutView.vue')
+      path: '/todo-use-api',
+      name: 'todo-use-api',
+      component: () => import('../views/todoUseAPI.vue'),
     },
     {
-      path: '/home',
-      name: 'home',
-      component: () => import('../views/HomeView.vue')
-    }
-  ]
+      path: '/composition',
+      name: 'composition',
+      component: () => import('../views/compositionView.vue'),
+    },
+    {
+      path: '/composition-use-api',
+      name: 'composition-use-api',
+      component: () => import('../views/compositionUseAPI.vue'),
+    },
+  ],
 })
 
 export default router

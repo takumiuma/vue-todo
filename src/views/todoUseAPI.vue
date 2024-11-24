@@ -1,21 +1,25 @@
 <template>
-  <div class="about">
+  <div>
     <loading v-model:active="isLoading" :enforce-focus="false" />
-    <h1>This is an about page</h1>
     <v-container>
       <v-form ref="form">
         <v-row>
           <v-col cols="6">
             <v-text-field
               v-model="todo"
-              :rules="[required, limit_length]"
+              :rules="[rules_.required('TODO'), rules_.limit_length('TODO', 200)]"
               counter="200"
               clearable
               label="TODOを入力"
             ></v-text-field>
           </v-col>
           <v-col cols="4">
-            <v-select :rules="[required]" label="担当者" v-model="pic" :items="pics"></v-select>
+            <v-select
+              :rules="[rules_.required('担当者')]"
+              label="担当者"
+              v-model="pic"
+              :items="pics"
+            ></v-select>
           </v-col>
           <v-col cols="2">
             <v-btn height="55" color="primary" @click="addTodo()">
@@ -71,7 +75,7 @@
               <v-col>
                 <v-text-field
                   v-model="editedItem.title"
-                  :rules="[required, limit_length]"
+                  :rules="[rules_.required('TODO'), rules_.limit_length('TODO', 200)]"
                   counter="200"
                   clearable
                   label="TODOを入力"
@@ -82,7 +86,7 @@
             <v-row>
               <v-col>
                 <v-select
-                  :rules="[required]"
+                  :rules="[rules_.required('担当者')]"
                   label="担当者"
                   v-model="editedItem.person"
                   :items="pics"
@@ -100,7 +104,6 @@
       </v-form>
     </v-dialog>
   </div>
-  <v-btn @click="check()">チェック</v-btn>
 </template>
 
 <script>
@@ -146,6 +149,11 @@ export default {
       sortByStatus: [{ key: 'done', order: 'asc' }],
       pics: ['担当者A', '担当者B', '担当者C'],
       pic: '',
+      rules_: {
+        required: (label) => (value) => !!value || `${label}は必ず入力してください`,
+        limit_length: (label, max) => (value) =>
+          value.length <= max || `${label}は200文字以内で入力してください`,
+      },
       icons: {
         mdiDelete,
         mdiPlaylistEdit,
@@ -164,8 +172,6 @@ export default {
     })
   },
   methods: {
-    required: (value) => !!value || '必ず入力してください',
-    limit_length: (value) => value.length <= 200 || '200文字以内で入力してください',
     async initialize() {
       this.todos = []
       await axios
@@ -182,12 +188,6 @@ export default {
           done: res.done.value,
         })
       )
-    },
-    check() {
-      console.log('this.res', this.res)
-      console.log('this.todos', this.todos)
-      console.log('this.todo', this.todo)
-      console.log('this.pic', this.pic)
     },
     async addTodo() {
       const { valid } = await this.$refs.form.validate()
